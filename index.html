@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bark Generator</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #1a1a1a;
+        color: #e0e0e0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      header {
+        padding: 1rem 2rem;
+        background: #252525;
+        border-bottom: 1px solid #333;
+      }
+
+      header h1 {
+        font-size: 1.25rem;
+        font-weight: 500;
+      }
+
+      main {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      #canvas-container {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: #121212;
+      }
+
+      #sidebar {
+        width: 320px;
+        background: #252525;
+        border-left: 1px solid #333;
+        overflow-y: auto;
+      }
+
+      /* Override dat.GUI styles */
+      .dg.main {
+        width: 100% !important;
+      }
+
+      .dg.main .close-button {
+        display: none;
+      }
+
+      #validation-panel {
+        padding: 1rem;
+        border-top: 1px solid #333;
+      }
+
+      #validation-panel h3 {
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-bottom: 0.75rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .validation-result {
+        padding: 0.75rem;
+        background: #1a1a1a;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+      }
+
+      .validation-result .species {
+        font-weight: 500;
+        color: #4ade80;
+      }
+
+      .validation-result .confidence {
+        font-size: 0.875rem;
+        color: #888;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Bark Generator</h1>
+    </header>
+    <main>
+      <div id="canvas-container"></div>
+      <aside id="sidebar">
+        <div id="gui-container"></div>
+        <div id="validation-panel">
+          <h3>Species Validation</h3>
+          <div id="validation-results">
+            <p style="color: #666; font-size: 0.875rem;">Generate a texture to see validation results.</p>
+          </div>
+        </div>
+      </aside>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
