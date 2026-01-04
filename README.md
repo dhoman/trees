@@ -1,4 +1,4 @@
-# Bark Generator
+# Tree Bark Generator
 
 A procedural tree bark texture generator built with p5.js. Generate realistic 2D bark patterns for various tree species using tunable algorithms inspired by "The Nature of Code" principles.
 
@@ -36,7 +36,7 @@ npm run build
 ## Project Structure
 
 ```
-bark-generator/
+trees/
 ├── src/
 │   ├── main.ts                 # Entry point, p5.js sketch setup
 │   ├── generators/
