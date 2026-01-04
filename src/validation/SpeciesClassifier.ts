@@ -148,7 +148,6 @@ export class SpeciesClassifier {
           weightedScore += 1;
         } else {
           // Partial score based on distance to range
-          const midpoint = (min + max) / 2;
           const rangeSize = max - min;
           const distance = Math.min(
             Math.abs(value - min),

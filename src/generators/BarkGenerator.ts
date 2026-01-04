@@ -47,40 +47,47 @@ export abstract class BarkGenerator {
     // Create or resize graphics buffer
     if (!this.graphics || this.graphics.width !== width || this.graphics.height !== height) {
       this.graphics = this.p.createGraphics(width, height);
+      // Set pixel density on the graphics buffer
+      this.graphics.pixelDensity(1);
+
+      // Optimize for frequent pixel reads (fixes willReadFrequently warning)
+      const canvas = (this.graphics as unknown as { canvas: HTMLCanvasElement }).canvas;
+      if (canvas) {
+        // Re-get context with optimization hint
+        canvas.getContext('2d', { willReadFrequently: true });
+      }
     }
 
     const g = this.graphics;
-    g.loadPixels();
 
     // Set noise seed for reproducibility
     this.p.noiseSeed(this.params.noise.seed);
 
-    const d = this.p.pixelDensity();
-    const pixelWidth = width * d;
-    const pixelHeight = height * d;
+    // Load pixels for direct manipulation
+    g.loadPixels();
+
+    // Pre-allocate pixel array reference for faster access
+    const pixels = g.pixels;
 
     // Generate texture pixel by pixel
-    for (let py = 0; py < pixelHeight; py++) {
-      for (let px = 0; px < pixelWidth; px++) {
-        // Normalize coordinates to 0-1 range (based on logical size)
-        const x = (px / d) / width;
-        const y = (py / d) / height;
-
+    for (let py = 0; py < height; py++) {
+      const rowOffset = py * width * 4;
+      for (let px = 0; px < width; px++) {
         // Calculate bark value at this point
-        const value = this.calculateBarkValue(x * width, y * height);
+        const value = this.calculateBarkValue(px, py);
 
-        // Get variation for color
-        const variation = this.p.noise(x * 50, y * 50);
+        // Get variation for color (simplified for performance)
+        const variation = this.p.noise(px * 0.1, py * 0.1);
 
         // Map to color
-        const [r, g, b, a] = getPixelColor(this.p, value, this.params.colors, variation);
+        const [cr, cg, cb, ca] = getPixelColor(this.p, value, this.params.colors, variation);
 
-        // Set pixel (accounting for pixel density)
-        const idx = 4 * (py * pixelWidth + px);
-        this.graphics.pixels[idx] = r;
-        this.graphics.pixels[idx + 1] = g;
-        this.graphics.pixels[idx + 2] = b;
-        this.graphics.pixels[idx + 3] = a;
+        // Set pixel in the graphics buffer
+        const idx = rowOffset + px * 4;
+        pixels[idx] = cr;
+        pixels[idx + 1] = cg;
+        pixels[idx + 2] = cb;
+        pixels[idx + 3] = ca;
       }
     }
 
@@ -216,5 +223,83 @@ export abstract class BarkGenerator {
    */
   getGraphics(): RenderTarget | null {
     return this.graphics;
+  }
+
+  /**
+   * Generate texture asynchronously with progress callback.
+   * Yields control back to the browser periodically for UI updates.
+   *
+   * @param width - Texture width in pixels
+   * @param height - Texture height in pixels
+   * @param onProgress - Callback with progress (0-100) and optional status message
+   * @returns Promise that resolves to the graphics buffer
+   */
+  async generateAsync(
+    width: number,
+    height: number,
+    onProgress?: (percent: number, status?: string) => void
+  ): Promise<RenderTarget> {
+    // Create or resize graphics buffer
+    if (!this.graphics || this.graphics.width !== width || this.graphics.height !== height) {
+      this.graphics = this.p.createGraphics(width, height);
+      this.graphics.pixelDensity(1);
+
+      const canvas = (this.graphics as unknown as { canvas: HTMLCanvasElement }).canvas;
+      if (canvas) {
+        canvas.getContext('2d', { willReadFrequently: true });
+      }
+    }
+
+    const g = this.graphics;
+
+    // Set noise seed for reproducibility
+    this.p.noiseSeed(this.params.noise.seed);
+
+    // Load pixels for direct manipulation
+    g.loadPixels();
+    const pixels = g.pixels;
+
+    const chunkSize = 16; // Rows per chunk - balance between progress updates and overhead
+    let currentRow = 0;
+
+    onProgress?.(0, 'Starting...');
+
+    return new Promise((resolve) => {
+      const processChunk = () => {
+        const endRow = Math.min(currentRow + chunkSize, height);
+
+        for (let py = currentRow; py < endRow; py++) {
+          const rowOffset = py * width * 4;
+          for (let px = 0; px < width; px++) {
+            const value = this.calculateBarkValue(px, py);
+            const variation = this.p.noise(px * 0.1, py * 0.1);
+            const [cr, cg, cb, ca] = getPixelColor(this.p, value, this.params.colors, variation);
+
+            const idx = rowOffset + px * 4;
+            pixels[idx] = cr;
+            pixels[idx + 1] = cg;
+            pixels[idx + 2] = cb;
+            pixels[idx + 3] = ca;
+          }
+        }
+
+        currentRow = endRow;
+        const percent = (currentRow / height) * 100;
+        onProgress?.(percent, 'Generating...');
+
+        if (currentRow < height) {
+          // Yield to browser, then continue
+          requestAnimationFrame(processChunk);
+        } else {
+          // Done
+          g.updatePixels();
+          onProgress?.(100, 'Complete!');
+          resolve(g);
+        }
+      };
+
+      // Start processing
+      requestAnimationFrame(processChunk);
+    });
   }
 }

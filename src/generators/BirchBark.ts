@@ -121,38 +121,41 @@ export class BirchBark extends BarkGenerator {
     // Create or resize graphics buffer
     if (!this.graphics || this.graphics.width !== width || this.graphics.height !== height) {
       this.graphics = this.p.createGraphics(width, height);
-    }
+      this.graphics.pixelDensity(1);
 
-    const g = this.graphics;
-    g.loadPixels();
-
-    this.p.noiseSeed(this.params.noise.seed);
-
-    const d = this.p.pixelDensity();
-    const pixelWidth = width * d;
-    const pixelHeight = height * d;
-
-    for (let py = 0; py < pixelHeight; py++) {
-      for (let px = 0; px < pixelWidth; px++) {
-        const x = (px / d) / width;
-        const y = (py / d) / height;
-
-        const value = this.calculateBarkValue(x * width, y * height);
-        const variation = this.p.noise(x * 30, y * 30) * 0.3;
-
-        // For birch, value maps differently:
-        // High value = white bark, Low value = dark lenticel
-        const [r, g, b, a] = getPixelColor(this.p, value, this.params.colors, variation);
-
-        const idx = 4 * (py * pixelWidth + px);
-        this.graphics.pixels[idx] = r;
-        this.graphics.pixels[idx + 1] = g;
-        this.graphics.pixels[idx + 2] = b;
-        this.graphics.pixels[idx + 3] = a;
+      // Optimize for frequent pixel reads
+      const canvas = (this.graphics as unknown as { canvas: HTMLCanvasElement }).canvas;
+      if (canvas) {
+        canvas.getContext('2d', { willReadFrequently: true });
       }
     }
 
-    g.updatePixels();
-    return g;
+    const gfx = this.graphics;
+
+    this.p.noiseSeed(this.params.noise.seed);
+
+    gfx.loadPixels();
+    const pixels = gfx.pixels;
+
+    for (let py = 0; py < height; py++) {
+      const rowOffset = py * width * 4;
+      for (let px = 0; px < width; px++) {
+        const value = this.calculateBarkValue(px, py);
+        const variation = this.p.noise(px * 0.06, py * 0.06) * 0.3;
+
+        // For birch, value maps differently:
+        // High value = white bark, Low value = dark lenticel
+        const [cr, cg, cb, ca] = getPixelColor(this.p, value, this.params.colors, variation);
+
+        const idx = rowOffset + px * 4;
+        pixels[idx] = cr;
+        pixels[idx + 1] = cg;
+        pixels[idx + 2] = cb;
+        pixels[idx + 3] = ca;
+      }
+    }
+
+    gfx.updatePixels();
+    return gfx;
   }
 }

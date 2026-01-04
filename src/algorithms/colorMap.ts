@@ -78,14 +78,14 @@ export function lerpColor(
 /**
  * Map a noise value to a bark color using the palette
  *
- * @param p - p5 instance
+ * @param _p - p5 instance (unused, kept for API consistency)
  * @param value - Noise value (0-1)
  * @param palette - Color palette to use
  * @param variation - Optional per-pixel variation (0-1)
  * @returns HSB color array
  */
 export function mapToColor(
-  p: p5,
+  _p: p5,
   value: number,
   palette: ColorPalette,
   variation: number = 0

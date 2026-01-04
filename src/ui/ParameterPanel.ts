@@ -1,4 +1,4 @@
-import GUI from 'dat.gui';
+import * as dat from 'dat.gui';
 import type { BarkParams } from '@/types';
 import { availableSpecies, getSpeciesDefaults } from '@/generators';
 
@@ -6,10 +6,10 @@ import { availableSpecies, getSpeciesDefaults } from '@/generators';
  * Parameter control panel using dat.GUI
  */
 export class ParameterPanel {
-  private gui: GUI;
+  private gui: dat.GUI;
   private params: BarkParams;
   private onChange: (params: BarkParams) => void;
-  private folders: Record<string, GUI> = {};
+  private folders: Record<string, dat.GUI> = {};
 
   constructor(
     container: HTMLElement,
@@ -19,7 +19,7 @@ export class ParameterPanel {
     this.params = { ...initialParams };
     this.onChange = onChange;
 
-    this.gui = new GUI({ autoPlace: false });
+    this.gui = new dat.GUI({ autoPlace: false });
     container.appendChild(this.gui.domElement);
 
     this.buildUI();
